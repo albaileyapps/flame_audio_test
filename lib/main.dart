@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/game.dart';
+import 'package:flame/input.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
@@ -54,30 +56,42 @@ class _MyHomePageState extends State<MyHomePage> {
 class MyGame extends FlameGame with HasTappables{
 
   bool catTimerHasStarted = false;
+  late TappableSprite catSpriteComponent;
+  late TappableSprite bagSpriteComponent;
 
   @override
   FutureOr<void> onLoad() async{
-    FlameAudio.audioCache.loadAll(['bag.mp3', 'cat.mp3']);
+    FlameAudio.bgm.initialize();
+    await FlameAudio.audioCache.loadAll(['bag.mp3', 'cat.mp3', 'music.mp3']);
     final bagSprite = await Sprite.load('bag.png');
-    final bagSpriteComponent = TappableSprite(Vector2(100, 100), bagSprite, onTap: () {
+    bagSpriteComponent = TappableSprite(Vector2(100, 100), bagSprite, onTap: () {
+      bagSpriteComponent.pulse();
       FlameAudio.play('bag.mp3');
     });
     bagSpriteComponent.position = Vector2(10, 20);
 
     final catSprite = await Sprite.load('cat.png');
-    final catSpriteTimerComponent = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
+    catSpriteComponent = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
       if (catTimerHasStarted) return;
       catTimerHasStarted = true;
       add(TimerComponent(period: 2.0, repeat: true, onTick: (){
         FlameAudio.play('cat.mp3');
+        catSpriteComponent.pulse();
       }));
     });
-    catSpriteTimerComponent.position = Vector2(150, 20);
+    catSpriteComponent.position = Vector2(150, 20);
+
+    var btn = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
+      FlameAudio.bgm.play('music.mp3', volume: 1.0);
+    });
+    btn.position = Vector2(20, 300);
+    add(btn);
 
     add(bagSpriteComponent);
-    add(catSpriteTimerComponent);
+    add(catSpriteComponent);
     return super.onLoad();
   }
+
 
   @override
   Color backgroundColor() {
@@ -94,5 +108,18 @@ class TappableSprite extends SpriteComponent with Tappable {
   bool onTapDown(TapDownInfo info) {
     onTap();
     return super.onTapDown(info);
+  }
+
+  pulse(){
+    ScaleEffect scaleEffect = ScaleEffect.by(Vector2.all(1.15),
+      EffectController(
+        duration: 0.15,
+        reverseDuration: 0.15,
+        startDelay: 0,
+        atMinDuration: 0,
+        curve: Curves.easeInOut,
+        infinite: false,
+      ),);
+    add(scaleEffect);
   }
 }
