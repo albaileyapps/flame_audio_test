@@ -74,6 +74,8 @@ class MyGame extends FlameGame with HasTappables{
     catSpriteComponent = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
       if (catTimerHasStarted) return;
       catTimerHasStarted = true;
+      FlameAudio.play('cat.mp3');
+      catSpriteComponent.pulse();
       add(TimerComponent(period: 2.0, repeat: true, onTick: (){
         FlameAudio.play('cat.mp3');
         catSpriteComponent.pulse();
@@ -82,13 +84,18 @@ class MyGame extends FlameGame with HasTappables{
     catSpriteComponent.position = Vector2(150, 20);
 
     var btn = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
-      FlameAudio.bgm.play('music.mp3', volume: 1.0);
+      if(FlameAudio.bgm.isPlaying){
+        FlameAudio.bgm.pause();
+      }else {
+        FlameAudio.bgm.play('music.mp3', volume: 1.0);
+      }
     });
     btn.position = Vector2(20, 300);
     add(btn);
 
     add(bagSpriteComponent);
     add(catSpriteComponent);
+
     return super.onLoad();
   }
 
