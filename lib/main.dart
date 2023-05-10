@@ -56,13 +56,19 @@ class _MyHomePageState extends State<MyHomePage> {
 class MyGame extends FlameGame with HasTappables{
 
   bool catTimerHasStarted = false;
-  late TappableSprite catSpriteComponent;
-  late TappableSprite bagSpriteComponent;
+  bool appleTimerHasStarted = false;
+  late TappableSprite bagSpriteComponent; // bag plays a one-time sound when it is pressed - FlameAudio.play()
+  late TappableSprite catSpriteComponent; // cat starts a 2 sec timer, onTick plays sound - FlameAudio.play()
+  late TappableSprite appleSpriteComponent; // apple starts a 2 sec timer, onTick plays a sound - AudioPool
+  late TappableSprite bananaSpriteComponent; // banana toggles FlameAudio.bgm
+
+  late AudioPool pool;
 
   @override
   FutureOr<void> onLoad() async{
     FlameAudio.bgm.initialize();
-    await FlameAudio.audioCache.loadAll(['bag.mp3', 'cat.mp3', 'music.mp3']);
+    await FlameAudio.audioCache.loadAll(['bag.mp3', 'cat.mp3', 'apple.mp3']);
+    pool = await FlameAudio.createPool('apple.mp3', maxPlayers: 3);
     final bagSprite = await Sprite.load('bag.png');
     bagSpriteComponent = TappableSprite(Vector2(100, 100), bagSprite, onTap: () {
       bagSpriteComponent.pulse();
@@ -83,16 +89,32 @@ class MyGame extends FlameGame with HasTappables{
     });
     catSpriteComponent.position = Vector2(150, 20);
 
-    var btn = TappableSprite(Vector2(100, 100), catSprite, onTap: () {
+    final appleSprite = await Sprite.load('apple.png');
+    appleSpriteComponent = TappableSprite(Vector2(100, 100), appleSprite, onTap: () {
+      if (appleTimerHasStarted) return;
+      appleTimerHasStarted = true;
+      pool.start();
+      appleSpriteComponent.pulse();
+      add(TimerComponent(period: 2.0, repeat: true, onTick: (){
+        pool.start();
+        appleSpriteComponent.pulse();
+      }));
+    });
+    appleSpriteComponent.position = Vector2(150, 300);
+
+    final bananaSprite = await Sprite.load('banana.png');
+    bananaSpriteComponent = TappableSprite(Vector2(100, 100), bananaSprite, onTap: () {
+      bananaSpriteComponent.pulse();
       if(FlameAudio.bgm.isPlaying){
         FlameAudio.bgm.pause();
       }else {
         FlameAudio.bgm.play('music.mp3', volume: 1.0);
       }
     });
-    btn.position = Vector2(20, 300);
-    add(btn);
+    bananaSpriteComponent.position = Vector2(20, 300);
 
+    add(bananaSpriteComponent);
+    add(appleSpriteComponent);
     add(bagSpriteComponent);
     add(catSpriteComponent);
 
